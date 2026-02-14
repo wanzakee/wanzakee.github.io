@@ -3,218 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LuxuryWear — Магазин одежды</title>
+<title>Mines Game</title>
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', sans-serif;
-}
-
 body {
-    background: #0f0f0f;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #111, #1f1f1f);
     color: white;
-    scroll-behavior: smooth;
-}
-
-/* HEADER */
-header {
-    position: fixed;
-    width: 100%;
-    padding: 20px 50px;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 1000;
-}
-
-header h1 {
-    font-size: 24px;
-    letter-spacing: 2px;
-}
-
-nav a {
-    color: white;
-    text-decoration: none;
-    margin-left: 30px;
-    transition: 0.3s;
-}
-
-nav a:hover {
-    color: #ff4d4d;
-}
-
-/* HERO */
-.hero {
-    height: 100vh;
-    background: linear-gradient(to right, #111, #222);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    flex-direction: column;
-}
-
-.hero h2 {
-    font-size: 60px;
-    margin-bottom: 20px;
-    animation: fadeIn 2s ease forwards;
-}
-
-.hero p {
-    font-size: 20px;
-    margin-bottom: 30px;
-    opacity: 0.8;
-}
-
-.hero button {
-    padding: 15px 35px;
-    border: none;
-    background: linear-gradient(45deg, #ff4d4d, #ff9900);
-    color: white;
-    font-size: 18px;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: 0.4s;
-}
-
-.hero button:hover {
-    transform: scale(1.1);
-}
-
-/* PRODUCTS */
-.products {
-    padding: 100px 50px;
     text-align: center;
 }
 
-.products h2 {
-    margin-bottom: 50px;
+h1 {
+    margin-top: 30px;
     font-size: 40px;
+}
+
+.controls {
+    margin: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 5px;
+}
+
+#startBtn {
+    background: #00c853;
+    color: white;
+}
+
+#cashoutBtn {
+    background: #ff9800;
+    color: white;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(5, 80px);
+    gap: 10px;
+    justify-content: center;
+    margin: 30px auto;
 }
 
-.card {
-    background: #1a1a1a;
-    border-radius: 15px;
-    padding: 20px;
-    transition: 0.4s;
-}
-
-.card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 40px rgba(255,77,77,0.3);
-}
-
-.card img {
-    width: 100%;
+.cell {
+    width: 80px;
+    height: 80px;
+    background: #2c2c2c;
     border-radius: 10px;
-}
-
-.card h3 {
-    margin: 15px 0 10px;
-}
-
-.card p {
-    opacity: 0.7;
-    margin-bottom: 15px;
-}
-
-.card button {
-    padding: 10px 20px;
-    border: none;
-    background: #ff4d4d;
-    color: white;
-    border-radius: 20px;
     cursor: pointer;
     transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
 }
 
-.card button:hover {
-    background: #ff9900;
+.cell:hover {
+    background: #3a3a3a;
 }
 
-/* FOOTER */
-footer {
-    background: #111;
-    padding: 40px;
-    text-align: center;
-    opacity: 0.7;
+.safe {
+    background: #00c853 !important;
 }
 
-@keyframes fadeIn {
-    from {opacity: 0; transform: translateY(30px);}
-    to {opacity: 1; transform: translateY(0);}
+.mine {
+    background: #d50000 !important;
+}
+
+.stats {
+    margin-top: 20px;
+    font-size: 20px;
 }
 </style>
 </head>
 <body>
 
-<header>
-    <h1>LuxuryWear</h1>
-    <nav>
-        <a href="#">Главная</a>
-        <a href="#products">Каталог</a>
-        <a href="#">Контакты</a>
-    </nav>
-</header>
+<h1>💣 MINES</h1>
 
-<section class="hero">
-    <h2>Стиль начинается здесь</h2>
-    <p>Одежда премиум брендов для уверенных в себе</p>
-    <button onclick="scrollToProducts()">Смотреть каталог</button>
-</section>
+<div class="controls">
+    <label>Мин: 
+        <select id="mineCount">
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="7">7</option>
+        </select>
+    </label>
+    <button id="startBtn">Начать игру</button>
+    <button id="cashoutBtn">Забрать</button>
+</div>
 
-<section class="products" id="products">
-    <h2>Популярные бренды</h2>
-    <div class="grid">
-        <div class="card">
-            <img src="https://via.placeholder.com/300x350" alt="">
-            <h3>Nike</h3>
-            <p>Спортивный стиль нового поколения</p>
-            <button>Купить</button>
-        </div>
+<div class="grid" id="grid"></div>
 
-        <div class="card">
-            <img src="https://via.placeholder.com/300x350" alt="">
-            <h3>Adidas</h3>
-            <p>Комфорт и технологии</p>
-            <button>Купить</button>
-        </div>
-
-        <div class="card">
-            <img src="https://via.placeholder.com/300x350" alt="">
-            <h3>Gucci</h3>
-            <p>Премиум мода</p>
-            <button>Купить</button>
-        </div>
-
-        <div class="card">
-            <img src="https://via.placeholder.com/300x350" alt="">
-            <h3>Balenciaga</h3>
-            <p>Современный люкс</p>
-            <button>Купить</button>
-        </div>
-    </div>
-</section>
-
-<footer>
-    © 2026 LuxuryWear | Все права защищены
-</footer>
+<div class="stats">
+    Множитель: <span id="multiplier">1.00x</span>
+</div>
 
 <script>
-function scrollToProducts() {
-    document.getElementById("products").scrollIntoView({behavior: "smooth"});
+const grid = document.getElementById("grid");
+const startBtn = document.getElementById("startBtn");
+const cashoutBtn = document.getElementById("cashoutBtn");
+const mineCountSelect = document.getElementById("mineCount");
+const multiplierText = document.getElementById("multiplier");
+
+let mines = [];
+let revealed = 0;
+let gameActive = false;
+let multiplier = 1;
+
+function createGrid() {
+    grid.innerHTML = "";
+    for (let i = 0; i < 25; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.dataset.index = i;
+        cell.addEventListener("click", handleClick);
+        grid.appendChild(cell);
+    }
 }
+
+function startGame() {
+    createGrid();
+    mines = [];
+    revealed = 0;
+    multiplier = 1;
+    multiplierText.textContent = "1.00x";
+    gameActive = true;
+
+    const mineCount = parseInt(mineCountSelect.value);
+    while (mines.length < mineCount) {
+        const rand = Math.floor(Math.random() * 25);
+        if (!mines.includes(rand)) mines.push(rand);
+    }
+}
+
+function handleClick(e) {
+    if (!gameActive) return;
+
+    const index = parseInt(e.target.dataset.index);
+
+    if (mines.includes(index)) {
+        e.target.classList.add("mine");
+        e.target.textContent = "💣";
+        revealAll();
+        gameActive = false;
+        alert("Вы проиграли!");
+    } else {
+        e.target.classList.add("safe");
+        e.target.textContent = "💎";
+        revealed++;
+        multiplier += 0.2;
+        multiplierText.textContent = multiplier.toFixed(2) + "x";
+        e.target.removeEventListener("click", handleClick);
+    }
+}
+
+function revealAll() {
+    document.querySelectorAll(".cell").forEach((cell, i) => {
+        if (mines.includes(i)) {
+            cell.classList.add("mine");
+            cell.textContent = "💣";
+        }
+    });
+}
+
+function cashOut() {
+    if (!gameActive) return;
+    gameActive = false;
+    alert("Вы забрали с множителем " + multiplier.toFixed(2) + "x");
+}
+
+startBtn.addEventListener("click", startGame);
+cashoutBtn.addEventListener("click", cashOut);
+
+createGrid();
 </script>
 
 </body>
