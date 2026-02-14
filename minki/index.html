@@ -77,6 +77,7 @@
             border: 1px solid #3a5a6a;
             cursor: pointer;
             transition: all 0.3s;
+            white-space: nowrap;
         }
 
         .balance:hover {
@@ -337,13 +338,13 @@
             filter: drop-shadow(0 0 5px gold);
         }
 
-        /* Мина (кастомная бомба) */
+        /* Красивая чёрная бомба */
         .mine {
             background: #0a141c !important;
             border: 2px solid #5a6a7a !important;
         }
 
-        .bomb {
+        .black-bomb {
             position: relative;
             display: flex;
             justify-content: center;
@@ -352,37 +353,50 @@
             height: 60px;
         }
 
-        .bomb-body {
+        .black-bomb .bomb-body {
             width: 40px;
             height: 40px;
             background: #222;
             border-radius: 50%;
             box-shadow: 0 0 0 2px #444, 0 4px 0 #111;
+            position: relative;
+            overflow: hidden;
         }
 
-        .fuse {
+        .black-bomb .bomb-body::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 20%;
+            height: 20%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+
+        .black-bomb .fuse {
             position: absolute;
             top: -10px;
             left: 50%;
             transform: translateX(-50%);
             width: 4px;
             height: 18px;
-            background: #fff;
+            background: #8B4513;
             border-radius: 2px;
-            box-shadow: 0 0 0 1px #aaa;
+            box-shadow: 0 0 0 1px #654321;
         }
 
-        .spark {
+        .black-bomb .spark {
             position: absolute;
             top: -18px;
             left: 50%;
             transform: translateX(-50%);
             width: 8px;
             height: 8px;
-            background: #ff4444;
+            background: #ffaa00;
             border-radius: 50%;
-            box-shadow: 0 0 10px #ff0000;
-            animation: sparkFlicker 0.2s infinite alternate;
+            box-shadow: 0 0 10px #ffaa00, 0 0 20px #ff5500;
+            animation: sparkFlicker 0.1s infinite alternate;
         }
 
         @keyframes sparkFlicker {
@@ -509,12 +523,41 @@
             font-weight: 800;
             margin-bottom: 30px;
             text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            word-break: break-word;
         }
 
-        .modal-buttons {
-            display: flex;
+        /* Новая зелёная кнопка "Пополнить" */
+        .green-deposit-btn {
+            background: #2ecc71;
+            border: none;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 15px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            width: 100%;
+            border: 1px solid #27ae60;
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .green-deposit-btn:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .deposit-options {
+            display: none;
             gap: 15px;
             justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .deposit-options.show {
+            display: flex;
         }
 
         .modal-btn {
@@ -726,22 +769,22 @@
                 font-size: 35px;
             }
 
-            .bomb {
+            .black-bomb {
                 width: 40px;
                 height: 40px;
             }
 
-            .bomb-body {
+            .black-bomb .bomb-body {
                 width: 28px;
                 height: 28px;
             }
 
-            .fuse {
+            .black-bomb .fuse {
                 height: 12px;
                 top: -6px;
             }
 
-            .spark {
+            .black-bomb .spark {
                 top: -14px;
                 width: 6px;
                 height: 6px;
@@ -778,6 +821,9 @@
             .balance {
                 padding: 8px 15px;
                 font-size: 16px;
+                max-width: 200px;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
             .balance-modal {
@@ -811,17 +857,17 @@
                 font-size: 30px;
             }
 
-            .bomb-body {
+            .black-bomb .bomb-body {
                 width: 24px;
                 height: 24px;
             }
 
-            .fuse {
+            .black-bomb .fuse {
                 width: 3px;
                 height: 10px;
             }
 
-            .spark {
+            .black-bomb .spark {
                 width: 5px;
                 height: 5px;
                 top: -12px;
@@ -837,7 +883,7 @@
 
 <div class="topbar">
     MINES
-    <div class="balance" id="balanceBtn">💰 <span id="balance">100.0</span></div>
+    <div class="balance" id="balanceBtn">💰 <span id="balance">100.00</span> wB$</div>
 </div>
 
 <div class="container" id="container">
@@ -853,7 +899,7 @@
             <div class="bet-label">Ставка</div>
             <div class="bet-input-wrapper">
                 <input type="number" id="bet" value="10" min="10" max="9999" step="1">
-                <span class="bet-currency">$</span>
+                <span class="bet-currency">wB$</span>
             </div>
         </div>
         <button class="play-btn" id="startBtn" onclick="startGame()">Играть</button>
@@ -867,10 +913,10 @@
         <div class="game-footer">
             <div class="max-win-box">
                 <div class="max-win-label">Макс. выигрыш</div>
-                <div class="max-win-amount" id="maxWinAmount">0.00 <span>$</span></div>
+                <div class="max-win-amount" id="maxWinAmount">0.00 <span>wB$</span></div>
             </div>
             <button class="cash-btn" id="cashBtn" onclick="cashOut()">
-                Вывести: <span id="cashAmount">0.00$</span>
+                Вывести: <span id="cashAmount">0.00 wB$</span>
             </button>
         </div>
     </div>
@@ -887,12 +933,18 @@
 <div class="modal-overlay" id="balanceModal">
     <div class="balance-modal">
         <h2>Баланс</h2>
-        <div class="modal-balance" id="modalBalance">100.0</div>
-        <div class="modal-buttons">
+        <div class="modal-balance" id="modalBalance">100.00 wB$</div>
+        
+        <!-- Зелёная кнопка "Пополнить" -->
+        <button class="green-deposit-btn" id="showDepositBtn">💵 Пополнить</button>
+        
+        <!-- Контейнер с кнопками +1, +10, +100 (изначально скрыт) -->
+        <div class="deposit-options" id="depositOptions">
             <button class="modal-btn" onclick="addBalance(1)">+1</button>
             <button class="modal-btn" onclick="addBalance(10)">+10</button>
             <button class="modal-btn" onclick="addBalance(100)">+100</button>
         </div>
+
         <!-- Блок активации чита -->
         <div class="cheat-activation" id="cheatActivation">
             <input type="password" id="cheatPassword" placeholder="Пароль разработчика">
@@ -943,22 +995,37 @@
     const cheatPassword = document.getElementById("cheatPassword");
     const cheatPanel = document.getElementById("cheatPanel");
     const cheatGrid = document.getElementById("cheatGrid");
+    const showDepositBtn = document.getElementById("showDepositBtn");
+    const depositOptions = document.getElementById("depositOptions");
+
+    // ==== Функция форматирования числа с разделителями и wB$ ====
+    function formatBalance(value) {
+        // Округляем до двух знаков
+        let rounded = value.toFixed(2);
+        // Разделяем целую и дробную части
+        let parts = rounded.split('.');
+        let integerPart = parts[0];
+        let fractionalPart = parts[1];
+        // Добавляем разделители тысяч через обратную кавычку
+        integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '`');
+        return integerPart + '.' + fractionalPart + ' wB$';
+    }
 
     // ==== Функции для обновления UI ====
     function updateBalance() {
-        balance = parseFloat(balance.toFixed(1));
-        balanceEl.textContent = balance.toFixed(1);
-        modalBalance.textContent = balance.toFixed(1);
+        balance = parseFloat(balance.toFixed(2));
+        balanceEl.textContent = formatBalance(balance).replace(' wB$', ''); // оставляем только число
+        modalBalance.textContent = formatBalance(balance);
         // Сохраняем баланс в localStorage
-        localStorage.setItem('mines_balance', balance.toFixed(1));
+        localStorage.setItem('mines_balance', balance.toFixed(2));
     }
 
     function updateCashButton() {
         if (active) {
             let potentialWin = bet * multiplier;
-            cashAmountSpan.textContent = potentialWin.toFixed(2) + '$';
+            cashAmountSpan.textContent = potentialWin.toFixed(2) + ' wB$';
         } else {
-            cashAmountSpan.textContent = '0.00$';
+            cashAmountSpan.textContent = '0.00 wB$';
         }
     }
 
@@ -970,7 +1037,7 @@
         const safeCells = 25 - minesCount;
         const maxMultiplier = cfg.base + cfg.inc * safeCells;
         const maxWin = currentBet * maxMultiplier;
-        maxWinAmount.innerHTML = maxWin.toFixed(2) + ' <span>$</span>';
+        maxWinAmount.innerHTML = maxWin.toFixed(2) + ' <span>wB$</span>';
     }
 
     // Создание игрового поля
@@ -1044,7 +1111,7 @@
     function startGame() {
         bet = parseFloat(betInput.value);
         if (isNaN(bet) || bet < 10 || bet > 9999) {
-            showMessage('Ставка от 10 до 9999');
+            showMessage('Ставка от 10 до 9999 wB$');
             return;
         }
         if (bet > balance) {
@@ -1091,10 +1158,10 @@
         let back = this.querySelector(".back");
 
         if (mines.includes(i)) {
-            // Мина
+            // Мина - используем красивую чёрную бомбу
             back.classList.add("mine");
             back.innerHTML = `
-                <span class="bomb">
+                <span class="black-bomb">
                     <span class="bomb-body"></span>
                     <span class="fuse"></span>
                     <span class="spark"></span>
@@ -1139,7 +1206,7 @@
                 if (mines.includes(i)) {
                     c.querySelector(".back").classList.add("mine");
                     c.querySelector(".back").innerHTML = `
-                        <span class="bomb">
+                        <span class="black-bomb">
                             <span class="bomb-body"></span>
                             <span class="fuse"></span>
                             <span class="spark"></span>
@@ -1166,7 +1233,7 @@
         balance += winAmount;
         updateBalance();
 
-        showMessage(`Вы выиграли ${winAmount}$!`);
+        showMessage(`Вы выиграли ${winAmount.toFixed(2)} wB$!`);
 
         active = false;
 
@@ -1183,7 +1250,7 @@
     function addBalance(amount) {
         balance += amount;
         updateBalance();
-        showMessage(`+${amount} к балансу`);
+        showMessage(`+${amount} wB$ к балансу`);
     }
 
     function openBalanceModal() {
@@ -1192,13 +1259,21 @@
         } else {
             cheatActivation.style.display = 'flex';
         }
+        // Скрываем опции депозита при открытии (показываем только зелёную кнопку)
+        depositOptions.classList.remove('show');
         modalOverlay.classList.add('active');
-        modalBalance.textContent = balance.toFixed(1);
+        modalBalance.textContent = formatBalance(balance);
     }
 
     function closeBalanceModal() {
         modalOverlay.classList.remove('active');
     }
+
+    // Показать кнопки депозита при клике на зелёную кнопку
+    showDepositBtn.addEventListener('click', function(e) {
+        e.stopPropagation(); // чтобы не закрыть модалку случайно
+        depositOptions.classList.add('show');
+    });
 
     // Закрытие по клику на оверлей
     modalOverlay.addEventListener('click', function(e) {
