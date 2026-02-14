@@ -3,27 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mines Game</title>
+<title>Mines Game Pro</title>
 
 <style>
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #111, #1f1f1f);
+    background: radial-gradient(circle at top, #1a1a1a, #0f0f0f);
     color: white;
     text-align: center;
+    overflow-x: hidden;
 }
 
 h1 {
     margin-top: 30px;
-    font-size: 40px;
+    font-size: 42px;
 }
 
 .controls {
     margin: 20px;
 }
 
-button {
+button, select {
     padding: 10px 20px;
     border: none;
     border-radius: 6px;
@@ -32,52 +33,79 @@ button {
     margin: 5px;
 }
 
-#startBtn {
-    background: #00c853;
-    color: white;
-}
-
-#cashoutBtn {
-    background: #ff9800;
-    color: white;
-}
+#startBtn { background: #00c853; color: white; }
+#cashoutBtn { background: #ff9800; color: white; }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(5, 80px);
-    gap: 10px;
+    grid-template-columns: repeat(5, 90px);
+    gap: 15px;
     justify-content: center;
-    margin: 30px auto;
+    margin: 40px auto;
 }
 
-.cell {
-    width: 80px;
-    height: 80px;
-    background: #2c2c2c;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: 0.3s;
+/* CARD */
+.card {
+    width: 90px;
+    height: 90px;
+    perspective: 1000px;
+}
+
+.inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.card.flipped .inner {
+    transform: rotateY(180deg);
+}
+
+.front, .back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    backface-visibility: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 30px;
 }
 
-.cell:hover {
-    background: #3a3a3a;
+.front {
+    background: #2c2c2c;
 }
 
-.safe {
-    background: #00c853 !important;
+.back {
+    background: #1e1e1e;
+    transform: rotateY(180deg);
 }
 
-.mine {
-    background: #d50000 !important;
+.safe { background: #00c853 !important; }
+.mine { background: #d50000 !important; }
+
+/* EXPLOSION EFFECT */
+.explosion {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, yellow, orange, red, transparent);
+    border-radius: 50%;
+    animation: explode 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes explode {
+    0% { transform: scale(0.2); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
 }
 
 .stats {
     margin-top: 20px;
-    font-size: 20px;
+    font-size: 22px;
 }
 </style>
 </head>
@@ -93,7 +121,7 @@ button {
             <option value="7">7</option>
         </select>
     </label>
-    <button id="startBtn">Начать игру</button>
+    <button id="startBtn">Начать</button>
     <button id="cashoutBtn">Забрать</button>
 </div>
 
@@ -118,11 +146,19 @@ let multiplier = 1;
 function createGrid() {
     grid.innerHTML = "";
     for (let i = 0; i < 25; i++) {
-        const cell = document.createElement("div");
-        cell.classList.add("cell");
-        cell.dataset.index = i;
-        cell.addEventListener("click", handleClick);
-        grid.appendChild(cell);
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.dataset.index = i;
+
+        card.innerHTML = `
+            <div class="inner">
+                <div class="front"></div>
+                <div class="back"></div>
+            </div>
+        `;
+
+        card.addEventListener("click", handleClick);
+        grid.appendChild(card);
     }
 }
 
@@ -144,37 +180,56 @@ function startGame() {
 function handleClick(e) {
     if (!gameActive) return;
 
-    const index = parseInt(e.target.dataset.index);
+    const card = e.currentTarget;
+    const index = parseInt(card.dataset.index);
+
+    if (card.classList.contains("flipped")) return;
+
+    card.classList.add("flipped");
+    const back = card.querySelector(".back");
 
     if (mines.includes(index)) {
-        e.target.classList.add("mine");
-        e.target.textContent = "💣";
+        back.classList.add("mine");
+        back.textContent = "💣";
+        createExplosion(card);
         revealAll();
         gameActive = false;
-        alert("Вы проиграли!");
     } else {
-        e.target.classList.add("safe");
-        e.target.textContent = "💎";
+        back.classList.add("safe");
+        back.textContent = "💎";
         revealed++;
-        multiplier += 0.2;
+        multiplier += 0.25;
         multiplierText.textContent = multiplier.toFixed(2) + "x";
-        e.target.removeEventListener("click", handleClick);
     }
 }
 
 function revealAll() {
-    document.querySelectorAll(".cell").forEach((cell, i) => {
-        if (mines.includes(i)) {
-            cell.classList.add("mine");
-            cell.textContent = "💣";
+    document.querySelectorAll(".card").forEach((card, i) => {
+        if (!card.classList.contains("flipped")) {
+            card.classList.add("flipped");
+            const back = card.querySelector(".back");
+            if (mines.includes(i)) {
+                back.classList.add("mine");
+                back.textContent = "💣";
+            }
         }
     });
+}
+
+function createExplosion(card) {
+    const rect = card.getBoundingClientRect();
+    const explosion = document.createElement("div");
+    explosion.classList.add("explosion");
+    explosion.style.left = rect.left + window.scrollX + "px";
+    explosion.style.top = rect.top + window.scrollY + "px";
+    document.body.appendChild(explosion);
+
+    setTimeout(() => explosion.remove(), 600);
 }
 
 function cashOut() {
     if (!gameActive) return;
     gameActive = false;
-    alert("Вы забрали с множителем " + multiplier.toFixed(2) + "x");
 }
 
 startBtn.addEventListener("click", startGame);
