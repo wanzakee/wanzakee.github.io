@@ -94,7 +94,7 @@
             transition: all 0.5s ease;
             position: relative;
             z-index: 1;
-            flex-wrap: wrap; /* для переноса панели чита */
+            flex-wrap: wrap;
             justify-content: center;
         }
 
@@ -875,7 +875,7 @@
         </div>
     </div>
 
-    <!-- Панель чита (отображается после активации) -->
+    <!-- Панель чита -->
     <div class="cheat-panel" id="cheatPanel">
         <h4>⚡ Чит: мины ⚡</h4>
         <div class="cheat-grid" id="cheatGrid"></div>
@@ -883,7 +883,7 @@
     </div>
 </div>
 
-<!-- Модальное окно пополнения баланса -->
+<!-- Модальное окно баланса -->
 <div class="modal-overlay" id="balanceModal">
     <div class="balance-modal">
         <h2>Баланс</h2>
@@ -903,14 +903,19 @@
 </div>
 
 <script>
-    let balance = 100.0;
+    // Загружаем баланс из localStorage, если есть
+    let balance = (() => {
+        const saved = localStorage.getItem('mines_balance');
+        return saved ? parseFloat(saved) : 100.0;
+    })();
+
     let bet = 0;
     let mines = [];
     let multiplier = 1.0;
     let active = false;
     let gameOverTimer = null;
     let currentMineCount = 3; // по умолчанию
-    let cheatModeEnabled = false; // чит-режим активирован?
+    let cheatModeEnabled = false;
 
     const multConfig = {
         1: { base: 0.5, inc: 0.1 },
@@ -919,6 +924,7 @@
         7: { base: 1.0, inc: 0.7 }
     };
 
+    // Элементы DOM
     const grid = document.getElementById("grid");
     const balanceEl = document.getElementById("balance");
     const betInput = document.getElementById("bet");
@@ -943,6 +949,8 @@
         balance = parseFloat(balance.toFixed(1));
         balanceEl.textContent = balance.toFixed(1);
         modalBalance.textContent = balance.toFixed(1);
+        // Сохраняем баланс в localStorage
+        localStorage.setItem('mines_balance', balance.toFixed(1));
     }
 
     function updateCashButton() {
@@ -1061,14 +1069,12 @@
 
         createGrid();
 
-        // Генерация мин
         let count = currentMineCount;
         while (mines.length < count) {
             let r = Math.floor(Math.random() * 25);
             if (!mines.includes(r)) mines.push(r);
         }
 
-        // Если чит включён, показываем мины
         if (cheatModeEnabled) {
             updateCheatGrid(mines);
         }
@@ -1170,7 +1176,7 @@
 
         createGrid();
         updateCashButton();
-        if (cheatModeEnabled) updateCheatGrid([]); // очищаем чит-сетку
+        if (cheatModeEnabled) updateCheatGrid([]);
     }
 
     // ==== Управление балансом ====
@@ -1181,7 +1187,6 @@
     }
 
     function openBalanceModal() {
-        // При открытии модалки показываем блок активации чита, если чит ещё не включён
         if (cheatModeEnabled) {
             cheatActivation.style.display = 'none';
         } else {
@@ -1205,7 +1210,7 @@
     // Кнопка баланса
     document.getElementById('balanceBtn').addEventListener('click', openBalanceModal);
 
-    // ==== Обработчики для изменения ставки и количества мин ====
+    // Обработчики для изменения ставки и количества мин
     betInput.addEventListener('input', updateMaxWin);
     trapsBox.addEventListener('click', function() {
         const values = [1, 3, 5, 7];
@@ -1213,7 +1218,7 @@
         index = (index + 1) % values.length;
         currentMineCount = values[index];
         trapsDisplay.textContent = currentMineCount;
-        updateMaxWin(); // обновляем максимальный выигрыш
+        updateMaxWin();
         showMessage(`Ловушек: ${currentMineCount}`);
     });
 
@@ -1221,7 +1226,7 @@
     createGrid();
     updateBalance();
     updateCashButton();
-    updateMaxWin(); // первоначальный расчёт
+    updateMaxWin();
 </script>
 
 </body>
