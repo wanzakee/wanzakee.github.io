@@ -526,7 +526,7 @@
             word-break: break-word;
         }
 
-        /* Новая зелёная кнопка "Пополнить" */
+        /* Зелёная кнопка "Пополнить" */
         .green-deposit-btn {
             background: #2ecc71;
             border: none;
@@ -595,37 +595,6 @@
 
         .close-modal:hover {
             color: #fff;
-        }
-
-        /* Блок активации чита в модалке */
-        .cheat-activation {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .cheat-activation input {
-            padding: 10px;
-            border-radius: 10px;
-            border: none;
-            background: #1e3a4a;
-            color: white;
-            border: 1px solid #3a5a6a;
-        }
-
-        .cheat-activation button {
-            padding: 10px;
-            background: #ffd700;
-            border: none;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .cheat-activation button:hover {
-            background: #ffaa00;
         }
 
         /* Панель чита (мини-окошко с минами) */
@@ -735,6 +704,101 @@
             }
         }
 
+        /* Админ-модалка (для ввода пароля) */
+        .admin-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .admin-modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .admin-modal {
+            background: #0f1f2a;
+            border: 2px solid #ff4444;
+            border-radius: 30px;
+            padding: 30px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .admin-modal-overlay.active .admin-modal {
+            transform: scale(1);
+        }
+
+        .admin-modal h2 {
+            color: #ff4444;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .admin-modal input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            border: none;
+            background: #1e3a4a;
+            color: white;
+            font-size: 16px;
+            border: 1px solid #3a5a6a;
+        }
+
+        .admin-modal input:focus {
+            outline: none;
+            border-color: #ff4444;
+        }
+
+        .admin-modal button {
+            background: #ff4444;
+            border: none;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .admin-modal button:hover {
+            background: #ff6666;
+            transform: scale(1.02);
+        }
+
+        .admin-modal .close-admin {
+            background: none;
+            border: none;
+            color: #8aaabc;
+            font-size: 14px;
+            text-decoration: underline;
+            cursor: pointer;
+            width: auto;
+            margin-top: 10px;
+        }
+
+        .admin-modal .close-admin:hover {
+            color: #fff;
+        }
+
         /* АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ */
         @media screen and (max-width: 768px) {
             .container {
@@ -842,6 +906,11 @@
                 margin-left: 0;
                 margin-top: 20px;
             }
+
+            .admin-modal {
+                width: 90%;
+                padding: 25px;
+            }
         }
 
         @media screen and (max-width: 480px) {
@@ -945,12 +1014,17 @@
             <button class="modal-btn" onclick="addBalance(100)">+100</button>
         </div>
 
-        <!-- Блок активации чита -->
-        <div class="cheat-activation" id="cheatActivation">
-            <input type="password" id="cheatPassword" placeholder="Пароль разработчика">
-            <button onclick="activateCheat()">Войти как Админ</button>
-        </div>
         <button class="close-modal" onclick="closeBalanceModal()">Закрыть</button>
+    </div>
+</div>
+
+<!-- Админ-модалка для ввода пароля (появляется после секретной комбинации) -->
+<div class="admin-modal-overlay" id="adminModal">
+    <div class="admin-modal">
+        <h2>🔐 Админ-доступ</h2>
+        <input type="password" id="adminPassword" placeholder="Введите пароль">
+        <button onclick="activateCheatFromAdmin()">Активировать чит</button>
+        <button class="close-admin" onclick="closeAdminModal()">Закрыть</button>
     </div>
 </div>
 
@@ -991,14 +1065,16 @@
 
     const modalOverlay = document.getElementById("balanceModal");
     const modalBalance = document.getElementById("modalBalance");
-    const cheatActivation = document.getElementById("cheatActivation");
-    const cheatPassword = document.getElementById("cheatPassword");
     const cheatPanel = document.getElementById("cheatPanel");
     const cheatGrid = document.getElementById("cheatGrid");
     const showDepositBtn = document.getElementById("showDepositBtn");
     const depositOptions = document.getElementById("depositOptions");
 
-    // ==== Функция форматирования числа с разделителями и wB$ ====
+    // Элементы админ-модалки
+    const adminModal = document.getElementById("adminModal");
+    const adminPassword = document.getElementById("adminPassword");
+
+    // ==== Функция форматирования числа с разделителями (используем обычный пробел как "мини пробел") ====
     function formatBalance(value) {
         // Округляем до двух знаков
         let rounded = value.toFixed(2);
@@ -1006,8 +1082,8 @@
         let parts = rounded.split('.');
         let integerPart = parts[0];
         let fractionalPart = parts[1];
-        // Добавляем разделители тысяч через обратную кавычку
-        integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '`');
+        // Добавляем разделители тысяч через пробел (как "мини пробел")
+        integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
         return integerPart + '.' + fractionalPart + ' wB$';
     }
 
@@ -1067,11 +1143,11 @@
     }
 
     // ==== Чит-режим ====
-    function activateCheat() {
-        const pwd = cheatPassword.value;
+    function activateCheatFromAdmin() {
+        const pwd = adminPassword.value;
         if (pwd === 'Qwertyuiop11') {
             cheatModeEnabled = true;
-            cheatActivation.style.display = 'none'; // скрываем форму ввода в модалке
+            closeAdminModal();
             cheatPanel.classList.add('visible'); // показываем панель чита
             // Если игра уже активна, сразу показываем мины
             if (active) {
@@ -1079,7 +1155,6 @@
             } else {
                 updateCheatGrid([]); // пустая сетка
             }
-            closeBalanceModal(); // закрываем модалку
             showMessage('Чит-режим активирован');
         } else {
             alert('Неверный пароль');
@@ -1089,7 +1164,6 @@
     function disableCheat() {
         cheatModeEnabled = false;
         cheatPanel.classList.remove('visible');
-        cheatActivation.style.display = 'flex'; // снова показываем форму в модалке (при следующем открытии)
         updateCheatGrid([]); // очищаем
         showMessage('Чит-режим отключён');
     }
@@ -1229,6 +1303,11 @@
     function cashOut() {
         if (!active) return;
 
+        // Сохраняем параметры игры для проверки секретной комбинации
+        const wasMineCount = currentMineCount;
+        const wasBet = bet;
+        const flippedCount = document.querySelectorAll('.card.flipped').length;
+
         const winAmount = parseFloat((bet * multiplier).toFixed(2));
         balance += winAmount;
         updateBalance();
@@ -1244,6 +1323,11 @@
         createGrid();
         updateCashButton();
         if (cheatModeEnabled) updateCheatGrid([]);
+
+        // Проверяем секретную комбинацию: 5 мин, ставка 14.88, ни одной открытой клетки
+        if (wasMineCount === 5 && Math.abs(wasBet - 14.88) < 0.001 && flippedCount === 0) {
+            openAdminModal();
+        }
     }
 
     // ==== Управление балансом ====
@@ -1251,15 +1335,14 @@
         balance += amount;
         updateBalance();
         showMessage(`+${amount} wB$ к балансу`);
+        // После пополнения скрываем кнопки опций и показываем зелёную кнопку
+        depositOptions.classList.remove('show');
+        showDepositBtn.style.display = 'block';
     }
 
     function openBalanceModal() {
-        if (cheatModeEnabled) {
-            cheatActivation.style.display = 'none';
-        } else {
-            cheatActivation.style.display = 'flex';
-        }
-        // Скрываем опции депозита при открытии (показываем только зелёную кнопку)
+        // Сбрасываем состояние: зелёная кнопка видна, опции скрыты
+        showDepositBtn.style.display = 'block';
         depositOptions.classList.remove('show');
         modalOverlay.classList.add('active');
         modalBalance.textContent = formatBalance(balance);
@@ -1269,13 +1352,14 @@
         modalOverlay.classList.remove('active');
     }
 
-    // Показать кнопки депозита при клике на зелёную кнопку
+    // Показать кнопки депозита и скрыть зелёную кнопку
     showDepositBtn.addEventListener('click', function(e) {
-        e.stopPropagation(); // чтобы не закрыть модалку случайно
+        e.stopPropagation();
+        showDepositBtn.style.display = 'none';
         depositOptions.classList.add('show');
     });
 
-    // Закрытие по клику на оверлей
+    // Закрытие модалки баланса по клику на оверлей
     modalOverlay.addEventListener('click', function(e) {
         if (e.target === modalOverlay) {
             closeBalanceModal();
@@ -1284,6 +1368,23 @@
 
     // Кнопка баланса
     document.getElementById('balanceBtn').addEventListener('click', openBalanceModal);
+
+    // ==== Админ-модалка ====
+    function openAdminModal() {
+        adminModal.classList.add('active');
+        adminPassword.value = ''; // очищаем поле
+    }
+
+    function closeAdminModal() {
+        adminModal.classList.remove('active');
+    }
+
+    // Закрытие по клику на оверлей
+    adminModal.addEventListener('click', function(e) {
+        if (e.target === adminModal) {
+            closeAdminModal();
+        }
+    });
 
     // Обработчики для изменения ставки и количества мин
     betInput.addEventListener('input', updateMaxWin);
