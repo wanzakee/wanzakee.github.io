@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мой первый сайт</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+        }
+        section {
+            padding: 40px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Добро пожаловать!</h1>
+</header>
+
+<section>
+    <h2>Это мой простой сайт</h2>
+    <p>Сайт создан на чистом HTML и CSS.</p>
+    <button onclick="showMessage()">Нажми меня</button>
+</section>
+
+<footer>
+    © 2026 Мой сайт
+</footer>
+
+<script>
+    function showMessage() {
+        alert("Спасибо за клик!");
+    }
+</script>
+
+</body>
+</html>
