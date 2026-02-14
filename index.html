@@ -1,281 +1,886 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mines Neon</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mines</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
 
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, sans-serif;
-}
+        body {
+            background: linear-gradient(135deg, #0a141c 0%, #1a2c38 100%);
+            color: #fff;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
 
-body{
-    background: radial-gradient(circle at top, #0d1b2a, #000814);
-    color:white;
-    text-align:center;
-}
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle, rgba(100, 150, 200, 0.1) 0%, transparent 50%);
+            animation: rotate 25s linear infinite;
+            z-index: -1;
+        }
 
-/* HEADER */
-header{
-    padding:20px;
-    font-size:28px;
-    font-weight:bold;
-    letter-spacing:2px;
-    background:linear-gradient(90deg,#00c6ff,#0072ff);
-    -webkit-background-clip:text;
-    color:transparent;
-}
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 20px, transparent 20px, transparent 40px);
+            pointer-events: none;
+            z-index: -1;
+        }
 
-/* BALANCE PANEL */
-.panel{
-    margin:20px auto;
-    padding:20px;
-    width:350px;
-    background:rgba(255,255,255,0.05);
-    border-radius:15px;
-    box-shadow:0 0 20px rgba(0,114,255,0.4);
-}
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
 
-.panel input{
-    padding:8px;
-    width:80px;
-    text-align:center;
-    border-radius:6px;
-    border:none;
-    margin-left:5px;
-}
+        /* TOP BAR */
+        .topbar {
+            height: 70px;
+            background: rgba(10, 20, 28, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #2a3f4a;
+            position: relative;
+            z-index: 10;
+        }
 
-.panel button{
-    padding:8px 15px;
-    margin:5px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-weight:bold;
-}
+        .balance {
+            background: #1e3a4a;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 18px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+            border: 1px solid #3a5a6a;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-.start{background:#00ff88;}
-.cash{background:#ffaa00;}
-.add{background:#00c6ff;}
+        .balance:hover {
+            background: #2a4f62;
+            transform: scale(1.05);
+        }
 
-/* GRID */
-.grid{
-    display:grid;
-    grid-template-columns:repeat(5,90px);
-    gap:15px;
-    justify-content:center;
-    margin:40px auto;
-}
+        /* CONTENT */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            display: flex;
+            gap: 30px;
+            padding: 0 20px;
+            transition: all 0.5s ease;
+            position: relative;
+            z-index: 1;
+        }
 
-/* CARD FLIP */
-.card{
-    width:90px;
-    height:90px;
-    perspective:1000px;
-}
+        .container.game-active {
+            justify-content: center;
+        }
 
-.inner{
-    width:100%;
-    height:100%;
-    position:relative;
-    transition:transform 0.6s;
-    transform-style:preserve-3d;
-}
+        /* LEFT PANEL (только настройки) */
+        .panel {
+            width: 320px;
+            background: rgba(15, 30, 40, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s ease;
+            opacity: 1;
+            transform: translateX(0);
+            border: 1px solid #2a4a5a;
+            align-self: flex-start;
+        }
 
-.card.flipped .inner{
-    transform:rotateY(180deg);
-}
+        .panel.hidden {
+            opacity: 0;
+            transform: translateX(-50px);
+            pointer-events: none;
+            width: 0;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
 
-.front,.back{
-    position:absolute;
-    width:100%;
-    height:100%;
-    border-radius:12px;
-    backface-visibility:hidden;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:28px;
-}
+        .panel h3 {
+            margin-bottom: 20px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            font-size: 22px;
+            text-align: center;
+        }
 
-.front{
-    background:#112;
-    box-shadow:0 0 10px #00c6ff;
-}
+        /* Блок с ловушками */
+        .traps-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0a1a24;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+            border: 1px solid #2a4a5a;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-.back{
-    background:#111;
-    transform:rotateY(180deg);
-}
+        .traps-box:hover {
+            border-color: #ffd700;
+            background: #0f212e;
+        }
 
-.safe{
-    background:#00ff88 !important;
-    box-shadow:0 0 15px #00ff88;
-}
+        .traps-number {
+            font-size: 48px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
 
-.mine{
-    background:#ff0033 !important;
-    box-shadow:0 0 20px red;
-}
+        .traps-text {
+            font-size: 16px;
+            color: #8aaabc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-/* EXPLOSION */
-.explosion{
-    position:absolute;
-    width:100px;
-    height:100px;
-    background:radial-gradient(circle,yellow,orange,red,transparent);
-    border-radius:50%;
-    animation:explode 0.6s ease-out forwards;
-    pointer-events:none;
-}
+        .traps-icon {
+            font-size: 32px;
+            opacity: 0.5;
+        }
 
-@keyframes explode{
-    0%{transform:scale(0.2);opacity:1;}
-    100%{transform:scale(3);opacity:0;}
-}
+        /* Поле ставки */
+        .bet-box {
+            background: #0a1a24;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #2a4a5a;
+        }
 
-.stats{
-    margin-top:20px;
-    font-size:20px;
-}
-</style>
+        .bet-label {
+            font-size: 14px;
+            color: #8aaabc;
+            margin-bottom: 5px;
+        }
+
+        .bet-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bet-input-wrapper input {
+            flex: 1;
+            background: #1e3a4a;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            border: 1px solid #3a5a6a;
+        }
+
+        .bet-input-wrapper input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+
+        .bet-currency {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffd700;
+        }
+
+        /* Кнопка Играть */
+        .play-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #0a141c;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+        }
+
+        .play-btn:active {
+            transform: translateY(0);
+        }
+
+        .play-btn.disabled {
+            background: #2a4a5a;
+            color: #8aaabc;
+            box-shadow: none;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* GAME AREA */
+        .game {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.5s ease;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 100px);
+            gap: 15px;
+            transition: all 0.3s;
+        }
+
+        .card {
+            width: 100px;
+            height: 100px;
+            perspective: 1000px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card.flipped:hover {
+            transform: scale(1);
+        }
+
+        .inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: 0.5s;
+            transform-style: preserve-3d;
+        }
+
+        .card.flipped .inner {
+            transform: rotateY(180deg);
+        }
+
+        .front,
+        .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            backface-visibility: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .front {
+            background: linear-gradient(145deg, #1e3a4a, #0a1a24);
+            border: 2px solid #3a5a6a;
+        }
+
+        .front::before {
+            content: '?';
+            font-size: 40px;
+            color: #8aaabc;
+            opacity: 0.7;
+            font-weight: 700;
+        }
+
+        .back {
+            background: linear-gradient(145deg, #0f1f2a, #030a0f);
+            transform: rotateY(180deg);
+            border: 2px solid #2a4a5a;
+        }
+
+        /* Безопасная клетка */
+        .safe {
+            background: #0a141c !important;
+            border: 2px solid #3a5a6a !important;
+        }
+
+        .safe .star {
+            color: #ffd700;
+            font-size: 60px;
+            line-height: 1;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            filter: drop-shadow(0 0 5px gold);
+        }
+
+        /* Мина (бомба) */
+        .mine {
+            background: #0a141c !important;
+            border: 2px solid #5a6a7a !important;
+        }
+
+        .mine .bomb {
+            font-size: 50px;
+            line-height: 1;
+            filter: drop-shadow(0 0 5px #ff4444);
+        }
+
+        /* FOOTER под игрой */
+        .game-footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-top: 30px;
+            width: 100%;
+            padding: 15px 30px;
+            background: rgba(10, 20, 28, 0.8);
+            backdrop-filter: blur(5px);
+            border-radius: 60px;
+            border: 1px solid #2a4a5a;
+        }
+
+        .max-win-box {
+            background: #0a1a24;
+            border-radius: 15px;
+            padding: 12px 25px;
+            text-align: center;
+            border: 1px solid #2a4a5a;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .max-win-label {
+            font-size: 14px;
+            color: #8aaabc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .max-win-amount {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            line-height: 1.2;
+        }
+
+        .max-win-amount span {
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .cash-btn {
+            background: #1e3a4a;
+            border: 1px solid #3a5a6a;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 40px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cash-btn:hover {
+            background: #2a4f62;
+            border-color: #ffd700;
+            transform: scale(1.05);
+        }
+
+        .cash-btn span {
+            color: #ffd700;
+            font-weight: 700;
+        }
+
+        /* MODAL BALANCE */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .balance-modal {
+            background: #0f1f2a;
+            border: 2px solid #ffd700;
+            border-radius: 30px;
+            padding: 30px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .balance-modal {
+            transform: scale(1);
+        }
+
+        .balance-modal h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .modal-balance {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            background: #1e3a4a;
+            border: 1px solid #3a5a6a;
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            width: 70px;
+            height: 70px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-btn:hover {
+            background: #2a4f62;
+            border-color: #ffd700;
+            transform: scale(1.1);
+            color: #ffd700;
+        }
+
+        .close-modal {
+            margin-top: 20px;
+            background: none;
+            border: none;
+            color: #8aaabc;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .close-modal:hover {
+            color: #fff;
+        }
+
+        /* EXPLOSION */
+        .explosion {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, yellow, orange, red, transparent);
+            border-radius: 50%;
+            animation: explode 0.6s forwards;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0.2); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        /* Message */
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 20, 28, 0.95);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 22px;
+            animation: messageAppear 0.5s ease;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 2px solid #ffd700;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -30%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+    </style>
 </head>
 <body>
 
-<header>MINES ⭐</header>
-
-<div class="panel">
-    Баланс: <span id="balance">100</span><br><br>
-    Ставка: <input type="number" id="bet" value="10" min="1"><br>
-    <button class="start" id="startBtn">Начать</button>
-    <button class="cash" id="cashoutBtn">Забрать</button>
-    <button class="add" id="addBalance">+1</button>
+<div class="topbar">
+    MINES
+    <div class="balance" id="balanceBtn">💰 <span id="balance">100.0</span></div>
 </div>
 
-<div class="grid" id="grid"></div>
+<div class="container" id="container">
+    <!-- Левая панель настроек (без кнопок вывода и добавления) -->
+    <div class="panel" id="panel">
+        <h3>MINES</h3>
+        <div class="traps-box" id="trapsBox">
+            <div class="traps-number" id="trapsDisplay">3</div>
+            <div class="traps-text">ловушек</div>
+            <div class="traps-icon">💣</div>
+        </div>
+        <div class="bet-box">
+            <div class="bet-label">Ставка</div>
+            <div class="bet-input-wrapper">
+                <input type="number" id="bet" value="10" min="10" max="9999" step="1">
+                <span class="bet-currency">$</span>
+            </div>
+        </div>
+        <button class="play-btn" id="startBtn" onclick="startGame()">Играть</button>
+    </div>
 
-<div class="stats">
-    Множитель: <span id="multiplier">1.00x</span>
+    <!-- Игровая зона -->
+    <div class="game" id="game">
+        <div class="grid" id="grid"></div>
+
+        <!-- Новый футер под полем -->
+        <div class="game-footer">
+            <div class="max-win-box">
+                <div class="max-win-label">Макс. выигрыш</div>
+                <div class="max-win-amount">432.4 <span>$</span></div>
+            </div>
+            <button class="cash-btn" id="cashBtn" onclick="cashOut()">
+                Вывести: <span id="cashAmount">0.00$</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно пополнения баланса -->
+<div class="modal-overlay" id="balanceModal">
+    <div class="balance-modal">
+        <h2>Баланс</h2>
+        <div class="modal-balance" id="modalBalance">100.0</div>
+        <div class="modal-buttons">
+            <button class="modal-btn" onclick="addBalance(1)">+1</button>
+            <button class="modal-btn" onclick="addBalance(10)">+10</button>
+            <button class="modal-btn" onclick="addBalance(100)">+100</button>
+        </div>
+        <button class="close-modal" onclick="closeBalanceModal()">Закрыть</button>
+    </div>
 </div>
 
 <script>
-const grid=document.getElementById("grid");
-const balanceEl=document.getElementById("balance");
-const betInput=document.getElementById("bet");
-const multiplierText=document.getElementById("multiplier");
+    let balance = 100.0;
+    let bet = 0;
+    let mines = [];
+    let multiplier = 1.0;
+    let active = false;
+    let gameOverTimer = null;
+    let currentMineCount = 3; // по умолчанию
 
-let balance=100;
-let bet=0;
-let mines=[];
-let multiplier=1;
-let gameActive=false;
+    // Настройки множителей для разного количества мин
+    const multConfig = {
+        1: { base: 0.5, inc: 0.1 },
+        3: { base: 1.0, inc: 0.3 },
+        5: { base: 1.0, inc: 0.5 },
+        7: { base: 1.0, inc: 0.7 }
+    };
 
-function updateBalance(){
-    balanceEl.textContent=balance;
-}
+    // Элементы DOM
+    const grid = document.getElementById("grid");
+    const balanceEl = document.getElementById("balance");
+    const betInput = document.getElementById("bet");
+    const multiplierEl = document.getElementById("multiplier"); // его нет в HTML, добавим?
+    // Поскольку множитель теперь не показывается отдельно, а только в кнопке вывода,
+    // можно не использовать multiplierEl. Но для отладки оставим где-нибудь.
+    // Добавим элемент для отображения множителя, если хотим, но в задании не требуется.
+    // Создадим скрытое отображение или просто будем обновлять cashAmount.
+    const cashAmountSpan = document.getElementById("cashAmount");
+    const startBtn = document.getElementById("startBtn");
+    const cashBtn = document.getElementById("cashBtn");
+    const panel = document.getElementById("panel");
+    const container = document.getElementById("container");
+    const trapsDisplay = document.getElementById("trapsDisplay");
+    const trapsBox = document.getElementById("trapsBox");
 
-function createGrid(){
-    grid.innerHTML="";
-    for(let i=0;i<25;i++){
-        const card=document.createElement("div");
-        card.classList.add("card");
-        card.dataset.index=i;
-        card.innerHTML=`
-        <div class="inner">
-            <div class="front"></div>
-            <div class="back"></div>
-        </div>`;
-        card.addEventListener("click",handleClick);
-        grid.appendChild(card);
+    // Модалка баланса
+    const modalOverlay = document.getElementById("balanceModal");
+    const modalBalance = document.getElementById("modalBalance");
+
+    // Функция обновления баланса (с одним десятичным знаком)
+    function updateBalance() {
+        balance = parseFloat(balance.toFixed(1));
+        balanceEl.textContent = balance.toFixed(1);
+        modalBalance.textContent = balance.toFixed(1);
     }
-}
 
-function startGame(){
-    bet=parseInt(betInput.value);
-    if(bet>balance||bet<=0)return;
-
-    balance-=bet;
-    updateBalance();
-
-    mines=[];
-    multiplier=1;
-    multiplierText.textContent="1.00x";
-    gameActive=true;
-    createGrid();
-
-    while(mines.length<5){
-        let r=Math.floor(Math.random()*25);
-        if(!mines.includes(r))mines.push(r);
+    // Функция обновления суммы в кнопке вывода
+    function updateCashButton() {
+        if (active) {
+            let potentialWin = bet * multiplier;
+            cashAmountSpan.textContent = potentialWin.toFixed(2) + '$';
+        } else {
+            cashAmountSpan.textContent = '0.00$';
+        }
     }
-}
 
-function handleClick(e){
-    if(!gameActive)return;
-    const card=e.currentTarget;
-    const index=parseInt(card.dataset.index);
-    if(card.classList.contains("flipped"))return;
-
-    card.classList.add("flipped");
-    const back=card.querySelector(".back");
-
-    if(mines.includes(index)){
-        back.classList.add("mine");
-        back.textContent="💣";
-        explode(card);
-        revealAll();
-        gameActive=false;
-    }else{
-        back.classList.add("safe");
-        back.textContent="⭐";
-        multiplier+=0.3;
-        multiplierText.textContent=multiplier.toFixed(2)+"x";
+    // Создание сетки
+    function createGrid() {
+        grid.innerHTML = "";
+        for (let i = 0; i < 25; i++) {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.dataset.i = i;
+            card.innerHTML = `
+                <div class="inner">
+                    <div class="front"></div>
+                    <div class="back"></div>
+                </div>`;
+            card.onclick = handleClick;
+            grid.appendChild(card);
+        }
     }
-}
 
-function revealAll(){
-    document.querySelectorAll(".card").forEach((card,i)=>{
-        if(!card.classList.contains("flipped")){
-            card.classList.add("flipped");
-            const back=card.querySelector(".back");
-            if(mines.includes(i)){
-                back.classList.add("mine");
-                back.textContent="💣";
+    // Всплывающее сообщение
+    function showMessage(text, isWin = false) {
+        const msg = document.createElement('div');
+        msg.className = 'message';
+        msg.textContent = text;
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 1500);
+    }
+
+    // Старт игры
+    function startGame() {
+        bet = parseFloat(betInput.value);
+        if (isNaN(bet) || bet < 10 || bet > 9999) {
+            showMessage('Ставка от 10 до 9999');
+            return;
+        }
+        if (bet > balance) {
+            showMessage('Недостаточно средств!');
+            return;
+        }
+
+        balance -= bet;
+        updateBalance();
+
+        // Устанавливаем множитель согласно конфигу
+        const cfg = multConfig[currentMineCount] || multConfig[3];
+        multiplier = cfg.base;
+
+        mines = [];
+        active = true;
+
+        // Скрываем левую панель, но оставляем футер
+        panel.classList.add('hidden');
+        startBtn.classList.add('disabled');
+        container.classList.add('game-active');
+
+        // Обновляем кнопку вывода
+        updateCashButton();
+
+        createGrid();
+
+        // Генерация мин
+        let count = currentMineCount;
+        while (mines.length < count) {
+            let r = Math.floor(Math.random() * 25);
+            if (!mines.includes(r)) mines.push(r);
+        }
+
+        showMessage('Игра началась!');
+    }
+
+    // Обработка клика по карте
+    function handleClick() {
+        if (!active) return;
+        let i = parseInt(this.dataset.i);
+        if (this.classList.contains("flipped")) return;
+
+        this.classList.add("flipped");
+        let back = this.querySelector(".back");
+
+        if (mines.includes(i)) {
+            // Мина: бомба на тёмном фоне
+            back.classList.add("mine");
+            back.innerHTML = '<span class="bomb">💣</span>';
+            explode(this);
+            revealAll();
+            active = false;
+
+            showMessage('Вы проиграли!');
+
+            // Автоперезапуск через 2 сек
+            if (gameOverTimer) clearTimeout(gameOverTimer);
+            gameOverTimer = setTimeout(() => {
+                panel.classList.remove('hidden');
+                startBtn.classList.remove('disabled');
+                container.classList.remove('game-active');
+                createGrid();
+                updateCashButton();
+                gameOverTimer = null;
+            }, 2000);
+        } else {
+            // Безопасная клетка: звезда на тёмном фоне
+            back.classList.add("safe");
+            back.innerHTML = '<span class="star">★</span>';
+
+            // Увеличиваем множитель согласно конфигу
+            const cfg = multConfig[currentMineCount] || multConfig[3];
+            multiplier += cfg.inc;
+            updateCashButton();
+
+            // Проверка на полное открытие (выигрыш)
+            const flipped = document.querySelectorAll('.card.flipped').length;
+            if (flipped === 25 - mines.length) {
+                showMessage('Поздравляем! Вы открыли все клетки!', true);
+                cashOut();
             }
         }
+    }
+
+    // Открыть все мины при проигрыше
+    function revealAll() {
+        document.querySelectorAll(".card").forEach((c, i) => {
+            if (!c.classList.contains("flipped")) {
+                c.classList.add("flipped");
+                if (mines.includes(i)) {
+                    c.querySelector(".back").classList.add("mine");
+                    c.querySelector(".back").innerHTML = '<span class="bomb">💣</span>';
+                }
+            }
+        });
+    }
+
+    // Эффект взрыва
+    function explode(card) {
+        let r = card.getBoundingClientRect();
+        let e = document.createElement("div");
+        e.className = "explosion";
+        e.style.left = r.left + "px";
+        e.style.top = r.top + "px";
+        document.body.appendChild(e);
+        setTimeout(() => e.remove(), 600);
+    }
+
+    // Вывод выигрыша
+    function cashOut() {
+        if (!active) return;
+
+        const winAmount = parseFloat((bet * multiplier).toFixed(2));
+        balance += winAmount;
+        updateBalance();
+
+        showMessage(`Вы выиграли ${winAmount}$!`);
+
+        active = false;
+
+        // Возвращаем панель
+        panel.classList.remove('hidden');
+        startBtn.classList.remove('disabled');
+        container.classList.remove('game-active');
+
+        createGrid();
+        updateCashButton();
+    }
+
+    // Добавление баланса через модалку
+    function addBalance(amount) {
+        balance += amount;
+        updateBalance();
+        showMessage(`+${amount} к балансу`);
+    }
+
+    // Управление модальным окном баланса
+    function openBalanceModal() {
+        modalOverlay.classList.add('active');
+        modalBalance.textContent = balance.toFixed(1);
+    }
+
+    function closeBalanceModal() {
+        modalOverlay.classList.remove('active');
+    }
+
+    // Закрытие модалки по клику на оверлей
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) {
+            closeBalanceModal();
+        }
     });
-}
 
-function explode(card){
-    const rect=card.getBoundingClientRect();
-    const ex=document.createElement("div");
-    ex.classList.add("explosion");
-    ex.style.left=rect.left+"px";
-    ex.style.top=rect.top+"px";
-    document.body.appendChild(ex);
-    setTimeout(()=>ex.remove(),600);
-}
+    // Клик по балансу в топбаре
+    document.getElementById('balanceBtn').addEventListener('click', openBalanceModal);
 
-function cashOut(){
-    if(!gameActive)return;
-    let win=Math.floor(bet*multiplier);
-    balance+=win;
+    // Переключение количества мин по клику на trapsBox
+    trapsBox.addEventListener('click', function() {
+        const values = [1, 3, 5, 7];
+        let index = values.indexOf(currentMineCount);
+        index = (index + 1) % values.length;
+        currentMineCount = values[index];
+        trapsDisplay.textContent = currentMineCount;
+        showMessage(`Ловушек: ${currentMineCount}`);
+    });
+
+    // Инициализация
+    createGrid();
     updateBalance();
-    gameActive=false;
-}
+    updateCashButton();
 
-document.getElementById("startBtn").addEventListener("click",startGame);
-document.getElementById("cashoutBtn").addEventListener("click",cashOut);
-document.getElementById("addBalance").addEventListener("click",()=>{
-    balance+=1;
-    updateBalance();
-});
-
-createGrid();
-updateBalance();
+    // Дополнительно: при изменении ставки ничего не делаем, но можно обновить макс. выигрыш
+    // Но макс. выигрыш оставим статическим как на фото.
 </script>
 
 </body>
