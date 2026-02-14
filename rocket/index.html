@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Rocket · Crash</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a141c 0%, #1a2c38 100%);
+            color: #fff;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle, rgba(100, 150, 200, 0.1) 0%, transparent 50%);
+            animation: rotate 25s linear infinite;
+            z-index: -1;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 20px, transparent 20px, transparent 40px);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* TOP BAR */
+        .topbar {
+            height: 70px;
+            background: rgba(10, 20, 28, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #2a3f4a;
+            position: relative;
+            z-index: 10;
+        }
+
+        .balance {
+            background: #1e3a4a;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 18px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+            border: 1px solid #3a5a6a;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .balance:hover {
+            background: #2a4f62;
+            transform: scale(1.05);
+        }
+
+        /* CONTENT */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            display: flex;
+            gap: 30px;
+            padding: 0 20px;
+            transition: all 0.5s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container.game-active {
+            justify-content: center;
+        }
+
+        /* LEFT PANEL */
+        .panel {
+            width: 320px;
+            background: rgba(15, 30, 40, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s ease;
+            opacity: 1;
+            transform: translateX(0);
+            border: 1px solid #2a4a5a;
+            align-self: flex-start;
+        }
+
+        .panel.hidden {
+            opacity: 0;
+            transform: translateX(-50px);
+            pointer-events: none;
+            width: 0;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .panel h3 {
+            margin-bottom: 20px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            font-size: 22px;
+            text-align: center;
+        }
+
+        /* Блок ставки */
+        .bet-box {
+            background: #0a1a24;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #2a4a5a;
+        }
+
+        .bet-label {
+            font-size: 14px;
+            color: #8aaabc;
+            margin-bottom: 5px;
+        }
+
+        .bet-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bet-input-wrapper input {
+            flex: 1;
+            background: #1e3a4a;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            border: 1px solid #3a5a6a;
+        }
+
+        .bet-input-wrapper input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+
+        .bet-currency {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffd700;
+        }
+
+        /* Кнопка Запустить */
+        .play-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #0a141c;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+        }
+
+        .play-btn:active {
+            transform: translateY(0);
+        }
+
+        .play-btn.disabled {
+            background: #2a4a5a;
+            color: #8aaabc;
+            box-shadow: none;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* GAME AREA */
+        .game {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.5s ease;
+            width: 100%;
+        }
+
+        .rocket-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(10, 26, 36, 0.6);
+            border-radius: 40px;
+            padding: 40px 20px;
+            border: 2px solid #3a5a6a;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .multiplier-display {
+            font-size: 6rem;
+            font-weight: 800;
+            text-align: center;
+            line-height: 1.2;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            margin-bottom: 20px;
+            transition: all 0.1s;
+        }
+
+        .multiplier-display span {
+            font-size: 2rem;
+            color: #fff;
+        }
+
+        .rocket {
+            position: relative;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .rocket-body {
+            width: 80px;
+            height: 140px;
+            background: linear-gradient(145deg, #d32f2f, #b71c1c);
+            border-radius: 50% 50% 20% 20%;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            transform: translateY(0);
+            animation: fly 2s infinite alternate ease-in-out;
+        }
+
+        .rocket-body::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 15px;
+            width: 20px;
+            height: 40px;
+            background: linear-gradient(145deg, #f57c00, #e65100);
+            border-radius: 40% 40% 0 0;
+            transform: rotate(-10deg);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .rocket-body::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: 15px;
+            width: 20px;
+            height: 40px;
+            background: linear-gradient(145deg, #f57c00, #e65100);
+            border-radius: 40% 40% 0 0;
+            transform: rotate(10deg);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .window {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            background: #a5d6fa;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: inset 0 0 10px #29b6f6;
+        }
+
+        .flame {
+            position: absolute;
+            bottom: -30px;
+            left: 20px;
+            width: 40px;
+            height: 60px;
+            background: radial-gradient(ellipse at center, #ffd700 0%, #ff6f00 70%, transparent 100%);
+            border-radius: 50%;
+            filter: blur(4px);
+            animation: burn 0.2s infinite alternate;
+        }
+
+        @keyframes fly {
+            from { transform: translateY(0); }
+            to { transform: translateY(-15px); }
+        }
+
+        @keyframes burn {
+            from { opacity: 0.8; transform: scale(1); }
+            to { opacity: 1; transform: scale(1.2); }
+        }
+
+        .trail {
+            position: absolute;
+            bottom: -50px;
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to top, rgba(255,215,0,0.6), transparent);
+            filter: blur(8px);
+            animation: trailPulse 1s infinite;
+        }
+
+        @keyframes trailPulse {
+            0% { opacity: 0.5; height: 20px; }
+            100% { opacity: 1; height: 35px; }
+        }
+
+        /* Статистика (история крашей) */
+        .history {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .history-item {
+            background: #1e3a4a;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            border: 1px solid #3a5a6a;
+            color: #ffd700;
+        }
+
+        .history-item.crash {
+            color: #ef5350;
+            text-decoration: line-through;
+        }
+
+        /* FOOTER под игрой */
+        .game-footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-top: 30px;
+            width: 100%;
+            padding: 15px 30px;
+            background: rgba(10, 20, 28, 0.8);
+            backdrop-filter: blur(5px);
+            border-radius: 60px;
+            border: 1px solid #2a4a5a;
+        }
+
+        .max-win-box {
+            background: #0a1a24;
+            border-radius: 15px;
+            padding: 12px 25px;
+            text-align: center;
+            border: 1px solid #2a4a5a;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .max-win-label {
+            font-size: 14px;
+            color: #8aaabc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .max-win-amount {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            line-height: 1.2;
+        }
+
+        .max-win-amount span {
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .cash-btn {
+            background: #1e3a4a;
+            border: 1px solid #3a5a6a;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 40px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cash-btn:hover {
+            background: #2a4f62;
+            border-color: #ffd700;
+            transform: scale(1.05);
+        }
+
+        .cash-btn span {
+            color: #ffd700;
+            font-weight: 700;
+        }
+
+        /* MODAL BALANCE */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .balance-modal {
+            background: #0f1f2a;
+            border: 2px solid #ffd700;
+            border-radius: 30px;
+            padding: 30px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .balance-modal {
+            transform: scale(1);
+        }
+
+        .balance-modal h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .modal-balance {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            background: #1e3a4a;
+            border: 1px solid #3a5a6a;
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            width: 70px;
+            height: 70px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-btn:hover {
+            background: #2a4f62;
+            border-color: #ffd700;
+            transform: scale(1.1);
+            color: #ffd700;
+        }
+
+        .close-modal {
+            margin-top: 20px;
+            background: none;
+            border: none;
+            color: #8aaabc;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .close-modal:hover {
+            color: #fff;
+        }
+
+        /* Message */
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 20, 28, 0.95);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 22px;
+            animation: messageAppear 0.5s ease;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 2px solid #ffd700;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -30%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ */
+        @media screen and (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .panel {
+                width: 100%;
+                max-width: 400px;
+                padding: 20px;
+            }
+
+            .rocket-container {
+                padding: 20px 10px;
+            }
+
+            .multiplier-display {
+                font-size: 4rem;
+            }
+
+            .rocket-body {
+                width: 60px;
+                height: 100px;
+            }
+
+            .window {
+                width: 20px;
+                height: 20px;
+                top: 30px;
+            }
+
+            .flame {
+                bottom: -20px;
+                width: 30px;
+                height: 40px;
+            }
+
+            .game-footer {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+                border-radius: 30px;
+            }
+
+            .max-win-box {
+                width: 100%;
+                padding: 10px;
+            }
+
+            .max-win-amount {
+                font-size: 28px;
+            }
+
+            .cash-btn {
+                width: 100%;
+                justify-content: center;
+                font-size: 18px;
+                padding: 12px;
+            }
+
+            .topbar {
+                padding: 0 15px;
+                font-size: 20px;
+            }
+
+            .balance {
+                padding: 8px 15px;
+                font-size: 16px;
+            }
+
+            .balance-modal {
+                width: 90%;
+                padding: 25px;
+            }
+
+            .modal-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+
+            .history {
+                gap: 6px;
+            }
+
+            .history-item {
+                font-size: 14px;
+                padding: 4px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    ROCKET
+    <div class="balance" id="balanceBtn">💰 <span id="balance">100.0</span></div>
+</div>
+
+<div class="container" id="container">
+    <!-- Левая панель настроек -->
+    <div class="panel" id="panel">
+        <h3>ROCKET</h3>
+        <div class="bet-box">
+            <div class="bet-label">Ставка</div>
+            <div class="bet-input-wrapper">
+                <input type="number" id="bet" value="10" min="10" max="9999" step="1">
+                <span class="bet-currency">$</span>
+            </div>
+        </div>
+        <button class="play-btn" id="startBtn" onclick="startGame()">Запустить</button>
+    </div>
+
+    <!-- Игровая зона -->
+    <div class="game" id="game">
+        <div class="rocket-container">
+            <div class="multiplier-display" id="multiplier">1.00<span>x</span></div>
+            <div class="rocket" id="rocket">
+                <div class="rocket-body">
+                    <div class="window"></div>
+                    <div class="flame"></div>
+                </div>
+            </div>
+            <div class="trail"></div>
+        </div>
+
+        <!-- История крашей -->
+        <div class="history" id="history"></div>
+
+        <!-- Футер под игрой -->
+        <div class="game-footer">
+            <div class="max-win-box">
+                <div class="max-win-label">Макс. выигрыш</div>
+                <div class="max-win-amount">432.4 <span>$</span></div>
+            </div>
+            <button class="cash-btn" id="cashBtn" onclick="cashOut()">
+                Вывести: <span id="cashAmount">0.00$</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно пополнения баланса -->
+<div class="modal-overlay" id="balanceModal">
+    <div class="balance-modal">
+        <h2>Баланс</h2>
+        <div class="modal-balance" id="modalBalance">100.0</div>
+        <div class="modal-buttons">
+            <button class="modal-btn" onclick="addBalance(1)">+1</button>
+            <button class="modal-btn" onclick="addBalance(10)">+10</button>
+            <button class="modal-btn" onclick="addBalance(100)">+100</button>
+        </div>
+        <button class="close-modal" onclick="closeBalanceModal()">Закрыть</button>
+    </div>
+</div>
+
+<script>
+    let balance = 100.0;
+    let bet = 0;
+    let multiplier = 1.0;
+    let active = false;
+    let crashPoint = 1.0;
+    let gameInterval = null;
+    let history = []; // храним последние 10 крашей
+
+    const balanceEl = document.getElementById("balance");
+    const betInput = document.getElementById("bet");
+    const multiplierEl = document.getElementById("multiplier");
+    const cashAmountSpan = document.getElementById("cashAmount");
+    const startBtn = document.getElementById("startBtn");
+    const cashBtn = document.getElementById("cashBtn");
+    const panel = document.getElementById("panel");
+    const container = document.getElementById("container");
+    const historyEl = document.getElementById("history");
+
+    const modalOverlay = document.getElementById("balanceModal");
+    const modalBalance = document.getElementById("modalBalance");
+
+    // Функции баланса
+    function updateBalance() {
+        balance = parseFloat(balance.toFixed(1));
+        balanceEl.textContent = balance.toFixed(1);
+        modalBalance.textContent = balance.toFixed(1);
+    }
+
+    function addBalance(amount) {
+        balance += amount;
+        updateBalance();
+        showMessage(`+${amount} к балансу`);
+    }
+
+    // Модалка
+    function openBalanceModal() {
+        modalOverlay.classList.add('active');
+        modalBalance.textContent = balance.toFixed(1);
+    }
+    function closeBalanceModal() {
+        modalOverlay.classList.remove('active');
+    }
+    document.getElementById('balanceBtn').addEventListener('click', openBalanceModal);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeBalanceModal();
+    });
+
+    // Сообщения
+    function showMessage(text) {
+        const msg = document.createElement('div');
+        msg.className = 'message';
+        msg.textContent = text;
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 1500);
+    }
+
+    // Обновление кнопки вывода
+    function updateCashButton() {
+        if (active) {
+            let potentialWin = bet * multiplier;
+            cashAmountSpan.textContent = potentialWin.toFixed(2) + '$';
+        } else {
+            cashAmountSpan.textContent = '0.00$';
+        }
+    }
+
+    // Добавление в историю
+    function addToHistory(value, crashed = false) {
+        history.unshift({ value: value.toFixed(2), crashed });
+        if (history.length > 10) history.pop();
+        renderHistory();
+    }
+
+    function renderHistory() {
+        historyEl.innerHTML = '';
+        history.forEach(item => {
+            const div = document.createElement('div');
+            div.className = `history-item ${item.crashed ? 'crash' : ''}`;
+            div.textContent = item.crashed ? `💥 ${item.value}x` : `${item.value}x`;
+            historyEl.appendChild(div);
+        });
+    }
+
+    // Генерация случайной точки краша (от 1.0 до 10.0, неравномерно, как в краш играх)
+    function generateCrashPoint() {
+        // Простая формула: случайное число от 0 до 1, затем преобразование
+        let r = Math.random();
+        // Чтобы чаще были маленькие множители, используем экспоненту
+        let point = 1.0 + Math.pow(r * 9, 0.7); // значения от 1 до ~8-10
+        return Math.min(10.0, point);
+    }
+
+    // Запуск игры
+    function startGame() {
+        bet = parseFloat(betInput.value);
+        if (isNaN(bet) || bet < 10 || bet > 9999) {
+            showMessage('Ставка от 10 до 9999');
+            return;
+        }
+        if (bet > balance) {
+            showMessage('Недостаточно средств!');
+            return;
+        }
+
+        balance -= bet;
+        updateBalance();
+
+        active = true;
+        multiplier = 1.0;
+        crashPoint = generateCrashPoint();
+        multiplierEl.textContent = multiplier.toFixed(2) + '<span>x</span>';
+
+        panel.classList.add('hidden');
+        startBtn.classList.add('disabled');
+        container.classList.add('game-active');
+
+        updateCashButton();
+
+        // Запускаем интервал увеличения множителя (каждые 100 мс)
+        if (gameInterval) clearInterval(gameInterval);
+        gameInterval = setInterval(() => {
+            if (!active) return;
+
+            // Рост множителя (нелинейный для эффекта)
+            multiplier += 0.03 + (multiplier * 0.01); // чем больше, тем быстрее
+            multiplierEl.textContent = multiplier.toFixed(2) + '<span>x</span>';
+
+            // Проверка краша
+            if (multiplier >= crashPoint) {
+                // Взрыв
+                clearInterval(gameInterval);
+                active = false;
+                multiplierEl.textContent = crashPoint.toFixed(2) + '<span>x</span>';
+                addToHistory(crashPoint, true);
+                showMessage('Ракета взорвалась!');
+
+                // Возвращаем панель
+                panel.classList.remove('hidden');
+                startBtn.classList.remove('disabled');
+                container.classList.remove('game-active');
+                updateCashButton();
+            }
+        }, 100);
+    }
+
+    // Вывод средств
+    function cashOut() {
+        if (!active) return;
+
+        clearInterval(gameInterval);
+        active = false;
+
+        const winAmount = parseFloat((bet * multiplier).toFixed(2));
+        balance += winAmount;
+        updateBalance();
+
+        addToHistory(multiplier, false);
+        showMessage(`Вы выиграли ${winAmount}$!`);
+
+        panel.classList.remove('hidden');
+        startBtn.classList.remove('disabled');
+        container.classList.remove('game-active');
+        updateCashButton();
+    }
+
+    // Инициализация
+    updateBalance();
+    updateCashButton();
+    renderHistory();
+
+    // Для демо добавим пару записей в историю
+    history = [
+        { value: '1.23', crashed: false },
+        { value: '4.56', crashed: true },
+        { value: '2.34', crashed: false }
+    ];
+    renderHistory();
+</script>
+
+</body>
+</html>
