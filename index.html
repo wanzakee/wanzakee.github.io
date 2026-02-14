@@ -3,126 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mines Game Pro</title>
+<title>Mines Neon</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: radial-gradient(circle at top, #1a1a1a, #0f0f0f);
-    color: white;
-    text-align: center;
-    overflow-x: hidden;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
 }
 
-h1 {
-    margin-top: 30px;
-    font-size: 42px;
+body{
+    background: radial-gradient(circle at top, #0d1b2a, #000814);
+    color:white;
+    text-align:center;
 }
 
-.controls {
-    margin: 20px;
+/* HEADER */
+header{
+    padding:20px;
+    font-size:28px;
+    font-weight:bold;
+    letter-spacing:2px;
+    background:linear-gradient(90deg,#00c6ff,#0072ff);
+    -webkit-background-clip:text;
+    color:transparent;
 }
 
-button, select {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    margin: 5px;
+/* BALANCE PANEL */
+.panel{
+    margin:20px auto;
+    padding:20px;
+    width:350px;
+    background:rgba(255,255,255,0.05);
+    border-radius:15px;
+    box-shadow:0 0 20px rgba(0,114,255,0.4);
 }
 
-#startBtn { background: #00c853; color: white; }
-#cashoutBtn { background: #ff9800; color: white; }
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(5, 90px);
-    gap: 15px;
-    justify-content: center;
-    margin: 40px auto;
+.panel input{
+    padding:8px;
+    width:80px;
+    text-align:center;
+    border-radius:6px;
+    border:none;
+    margin-left:5px;
 }
 
-/* CARD */
-.card {
-    width: 90px;
-    height: 90px;
-    perspective: 1000px;
+.panel button{
+    padding:8px 15px;
+    margin:5px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
-.inner {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
+.start{background:#00ff88;}
+.cash{background:#ffaa00;}
+.add{background:#00c6ff;}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(5,90px);
+    gap:15px;
+    justify-content:center;
+    margin:40px auto;
 }
 
-.card.flipped .inner {
-    transform: rotateY(180deg);
+/* CARD FLIP */
+.card{
+    width:90px;
+    height:90px;
+    perspective:1000px;
 }
 
-.front, .back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    backface-visibility: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 30px;
+.inner{
+    width:100%;
+    height:100%;
+    position:relative;
+    transition:transform 0.6s;
+    transform-style:preserve-3d;
 }
 
-.front {
-    background: #2c2c2c;
+.card.flipped .inner{
+    transform:rotateY(180deg);
 }
 
-.back {
-    background: #1e1e1e;
-    transform: rotateY(180deg);
+.front,.back{
+    position:absolute;
+    width:100%;
+    height:100%;
+    border-radius:12px;
+    backface-visibility:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
 }
 
-.safe { background: #00c853 !important; }
-.mine { background: #d50000 !important; }
-
-/* EXPLOSION EFFECT */
-.explosion {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    background: radial-gradient(circle, yellow, orange, red, transparent);
-    border-radius: 50%;
-    animation: explode 0.6s ease-out forwards;
-    pointer-events: none;
+.front{
+    background:#112;
+    box-shadow:0 0 10px #00c6ff;
 }
 
-@keyframes explode {
-    0% { transform: scale(0.2); opacity: 1; }
-    100% { transform: scale(3); opacity: 0; }
+.back{
+    background:#111;
+    transform:rotateY(180deg);
 }
 
-.stats {
-    margin-top: 20px;
-    font-size: 22px;
+.safe{
+    background:#00ff88 !important;
+    box-shadow:0 0 15px #00ff88;
+}
+
+.mine{
+    background:#ff0033 !important;
+    box-shadow:0 0 20px red;
+}
+
+/* EXPLOSION */
+.explosion{
+    position:absolute;
+    width:100px;
+    height:100px;
+    background:radial-gradient(circle,yellow,orange,red,transparent);
+    border-radius:50%;
+    animation:explode 0.6s ease-out forwards;
+    pointer-events:none;
+}
+
+@keyframes explode{
+    0%{transform:scale(0.2);opacity:1;}
+    100%{transform:scale(3);opacity:0;}
+}
+
+.stats{
+    margin-top:20px;
+    font-size:20px;
 }
 </style>
 </head>
 <body>
 
-<h1>💣 MINES</h1>
+<header>MINES ⭐</header>
 
-<div class="controls">
-    <label>Мин: 
-        <select id="mineCount">
-            <option value="3">3</option>
-            <option value="5">5</option>
-            <option value="7">7</option>
-        </select>
-    </label>
-    <button id="startBtn">Начать</button>
-    <button id="cashoutBtn">Забрать</button>
+<div class="panel">
+    Баланс: <span id="balance">100</span><br><br>
+    Ставка: <input type="number" id="bet" value="10" min="1"><br>
+    <button class="start" id="startBtn">Начать</button>
+    <button class="cash" id="cashoutBtn">Забрать</button>
+    <button class="add" id="addBalance">+1</button>
 </div>
 
 <div class="grid" id="grid"></div>
@@ -132,110 +163,119 @@ button, select {
 </div>
 
 <script>
-const grid = document.getElementById("grid");
-const startBtn = document.getElementById("startBtn");
-const cashoutBtn = document.getElementById("cashoutBtn");
-const mineCountSelect = document.getElementById("mineCount");
-const multiplierText = document.getElementById("multiplier");
+const grid=document.getElementById("grid");
+const balanceEl=document.getElementById("balance");
+const betInput=document.getElementById("bet");
+const multiplierText=document.getElementById("multiplier");
 
-let mines = [];
-let revealed = 0;
-let gameActive = false;
-let multiplier = 1;
+let balance=100;
+let bet=0;
+let mines=[];
+let multiplier=1;
+let gameActive=false;
 
-function createGrid() {
-    grid.innerHTML = "";
-    for (let i = 0; i < 25; i++) {
-        const card = document.createElement("div");
+function updateBalance(){
+    balanceEl.textContent=balance;
+}
+
+function createGrid(){
+    grid.innerHTML="";
+    for(let i=0;i<25;i++){
+        const card=document.createElement("div");
         card.classList.add("card");
-        card.dataset.index = i;
-
-        card.innerHTML = `
-            <div class="inner">
-                <div class="front"></div>
-                <div class="back"></div>
-            </div>
-        `;
-
-        card.addEventListener("click", handleClick);
+        card.dataset.index=i;
+        card.innerHTML=`
+        <div class="inner">
+            <div class="front"></div>
+            <div class="back"></div>
+        </div>`;
+        card.addEventListener("click",handleClick);
         grid.appendChild(card);
     }
 }
 
-function startGame() {
-    createGrid();
-    mines = [];
-    revealed = 0;
-    multiplier = 1;
-    multiplierText.textContent = "1.00x";
-    gameActive = true;
+function startGame(){
+    bet=parseInt(betInput.value);
+    if(bet>balance||bet<=0)return;
 
-    const mineCount = parseInt(mineCountSelect.value);
-    while (mines.length < mineCount) {
-        const rand = Math.floor(Math.random() * 25);
-        if (!mines.includes(rand)) mines.push(rand);
+    balance-=bet;
+    updateBalance();
+
+    mines=[];
+    multiplier=1;
+    multiplierText.textContent="1.00x";
+    gameActive=true;
+    createGrid();
+
+    while(mines.length<5){
+        let r=Math.floor(Math.random()*25);
+        if(!mines.includes(r))mines.push(r);
     }
 }
 
-function handleClick(e) {
-    if (!gameActive) return;
-
-    const card = e.currentTarget;
-    const index = parseInt(card.dataset.index);
-
-    if (card.classList.contains("flipped")) return;
+function handleClick(e){
+    if(!gameActive)return;
+    const card=e.currentTarget;
+    const index=parseInt(card.dataset.index);
+    if(card.classList.contains("flipped"))return;
 
     card.classList.add("flipped");
-    const back = card.querySelector(".back");
+    const back=card.querySelector(".back");
 
-    if (mines.includes(index)) {
+    if(mines.includes(index)){
         back.classList.add("mine");
-        back.textContent = "💣";
-        createExplosion(card);
+        back.textContent="💣";
+        explode(card);
         revealAll();
-        gameActive = false;
-    } else {
+        gameActive=false;
+    }else{
         back.classList.add("safe");
-        back.textContent = "💎";
-        revealed++;
-        multiplier += 0.25;
-        multiplierText.textContent = multiplier.toFixed(2) + "x";
+        back.textContent="⭐";
+        multiplier+=0.3;
+        multiplierText.textContent=multiplier.toFixed(2)+"x";
     }
 }
 
-function revealAll() {
-    document.querySelectorAll(".card").forEach((card, i) => {
-        if (!card.classList.contains("flipped")) {
+function revealAll(){
+    document.querySelectorAll(".card").forEach((card,i)=>{
+        if(!card.classList.contains("flipped")){
             card.classList.add("flipped");
-            const back = card.querySelector(".back");
-            if (mines.includes(i)) {
+            const back=card.querySelector(".back");
+            if(mines.includes(i)){
                 back.classList.add("mine");
-                back.textContent = "💣";
+                back.textContent="💣";
             }
         }
     });
 }
 
-function createExplosion(card) {
-    const rect = card.getBoundingClientRect();
-    const explosion = document.createElement("div");
-    explosion.classList.add("explosion");
-    explosion.style.left = rect.left + window.scrollX + "px";
-    explosion.style.top = rect.top + window.scrollY + "px";
-    document.body.appendChild(explosion);
-
-    setTimeout(() => explosion.remove(), 600);
+function explode(card){
+    const rect=card.getBoundingClientRect();
+    const ex=document.createElement("div");
+    ex.classList.add("explosion");
+    ex.style.left=rect.left+"px";
+    ex.style.top=rect.top+"px";
+    document.body.appendChild(ex);
+    setTimeout(()=>ex.remove(),600);
 }
 
-function cashOut() {
-    if (!gameActive) return;
-    gameActive = false;
+function cashOut(){
+    if(!gameActive)return;
+    let win=Math.floor(bet*multiplier);
+    balance+=win;
+    updateBalance();
+    gameActive=false;
 }
 
-startBtn.addEventListener("click", startGame);
-cashoutBtn.addEventListener("click", cashOut);
+document.getElementById("startBtn").addEventListener("click",startGame);
+document.getElementById("cashoutBtn").addEventListener("click",cashOut);
+document.getElementById("addBalance").addEventListener("click",()=>{
+    balance+=1;
+    updateBalance();
+});
 
 createGrid();
+updateBalance();
 </script>
 
 </body>
