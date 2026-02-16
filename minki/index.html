@@ -20,7 +20,7 @@
             overflow-x: hidden;
         }
 
-        /* Анимированный фон */
+        /* Анимированный фон (без полосок) */
         body::before {
             content: '';
             position: absolute;
@@ -30,18 +30,6 @@
             left: -50%;
             background: radial-gradient(circle, rgba(100, 150, 200, 0.1) 0%, transparent 50%);
             animation: rotate 25s linear infinite;
-            z-index: -1;
-        }
-
-        body::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 20px, transparent 20px, transparent 40px);
-            pointer-events: none;
             z-index: -1;
         }
 
@@ -266,14 +254,17 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(5, 100px);
+            grid-template-columns: repeat(5, minmax(70px, 100px));
             gap: 15px;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
             transition: all 0.3s;
         }
 
         .card {
-            width: 100px;
-            height: 100px;
+            width: 100%;
+            aspect-ratio: 1 / 1;
             perspective: 1000px;
             cursor: pointer;
             transition: transform 0.3s;
@@ -916,6 +907,7 @@
         @media screen and (max-width: 480px) {
             .grid {
                 gap: 5px;
+                grid-template-columns: repeat(5, minmax(50px, 1fr));
             }
 
             .card {
@@ -944,6 +936,36 @@
 
             .traps-number {
                 font-size: 36px;
+            }
+
+            .game-footer {
+                padding: 15px;
+            }
+
+            .cash-btn {
+                font-size: 16px;
+                padding: 10px;
+            }
+
+            .max-win-amount {
+                font-size: 24px;
+            }
+        }
+
+        /* Дополнительная оптимизация для очень маленьких экранов */
+        @media screen and (max-width: 360px) {
+            .grid {
+                grid-template-columns: repeat(5, minmax(45px, 1fr));
+                gap: 4px;
+            }
+
+            .safe .star {
+                font-size: 24px;
+            }
+
+            .black-bomb .bomb-body {
+                width: 20px;
+                height: 20px;
             }
         }
     </style>
@@ -1074,15 +1096,135 @@
     const adminModal = document.getElementById("adminModal");
     const adminPassword = document.getElementById("adminPassword");
 
-    // ==== Функция форматирования числа с разделителями (используем обычный пробел как "мини пробел") ====
+    // ========== ЗВУКИ через Web Audio API ==========
+    let audioCtx = null;
+
+    function initAudio() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playSound(type) {
+        // Инициализируем аудиоконтекст при первом вызове
+        if (!audioCtx) {
+            initAudio();
+        }
+        // Если контекст в suspended (из-за политики автозапуска), пробуем resume
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+
+        switch (type) {
+            case 'start': {
+                // Короткий сигнал начала игры
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 880;
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+                break;
+            }
+            case 'safe': {
+                // Высокий звук открытия безопасной клетки
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 800;
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+                break;
+            }
+            case 'bomb': {
+                // Взрыв: шум + падение частоты
+                // Шум
+                const bufferSize = 4096;
+                const noiseNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+                noiseNode.onaudioprocess = function(e) {
+                    const output = e.outputBuffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+                };
+                const gainNoise = audioCtx.createGain();
+                gainNoise.gain.setValueAtTime(0.3, now);
+                gainNoise.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                noiseNode.connect(gainNoise).connect(audioCtx.destination);
+                
+                // Низкий тон
+                const osc = audioCtx.createOscillator();
+                const gainOsc = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+                gainOsc.gain.setValueAtTime(0.2, now);
+                gainOsc.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.connect(gainOsc).connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+
+                // Отключаем шум через 0.3 сек
+                setTimeout(() => {
+                    noiseNode.disconnect();
+                }, 300);
+                break;
+            }
+            case 'win': {
+                // Победная мелодия из двух нот
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.value = 659.25; // ми
+                gain1.gain.setValueAtTime(0.1, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc1.connect(gain1).connect(audioCtx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.2);
+
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.value = 880; // ля
+                gain2.gain.setValueAtTime(0.1, now + 0.2);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc2.connect(gain2).connect(audioCtx.destination);
+                osc2.start(now + 0.2);
+                osc2.stop(now + 0.4);
+                break;
+            }
+            case 'lose': {
+                // Печальный звук
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    // ==== Функция форматирования числа с разделителями ====
     function formatBalance(value) {
-        // Округляем до двух знаков
         let rounded = value.toFixed(2);
-        // Разделяем целую и дробную части
         let parts = rounded.split('.');
         let integerPart = parts[0];
         let fractionalPart = parts[1];
-        // Добавляем разделители тысяч через пробел (как "мини пробел")
         integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
         return integerPart + '.' + fractionalPart + ' wB$';
     }
@@ -1090,9 +1232,8 @@
     // ==== Функции для обновления UI ====
     function updateBalance() {
         balance = parseFloat(balance.toFixed(2));
-        balanceEl.textContent = formatBalance(balance).replace(' wB$', ''); // оставляем только число
+        balanceEl.textContent = formatBalance(balance).replace(' wB$', '');
         modalBalance.textContent = formatBalance(balance);
-        // Сохраняем баланс в localStorage
         localStorage.setItem('mines_balance', balance.toFixed(2));
     }
 
@@ -1105,7 +1246,7 @@
         }
     }
 
-    // Расчёт и отображение максимального выигрыша (до начала игры)
+    // Расчёт и отображение максимального выигрыша
     function updateMaxWin() {
         const currentBet = parseFloat(betInput.value) || 0;
         const minesCount = currentMineCount;
@@ -1148,12 +1289,11 @@
         if (pwd === 'Qwertyuiop11') {
             cheatModeEnabled = true;
             closeAdminModal();
-            cheatPanel.classList.add('visible'); // показываем панель чита
-            // Если игра уже активна, сразу показываем мины
+            cheatPanel.classList.add('visible');
             if (active) {
                 updateCheatGrid(mines);
             } else {
-                updateCheatGrid([]); // пустая сетка
+                updateCheatGrid([]);
             }
             showMessage('Чит-режим активирован');
         } else {
@@ -1164,11 +1304,10 @@
     function disableCheat() {
         cheatModeEnabled = false;
         cheatPanel.classList.remove('visible');
-        updateCheatGrid([]); // очищаем
+        updateCheatGrid([]);
         showMessage('Чит-режим отключён');
     }
 
-    // Обновление сетки с минами (для чита)
     function updateCheatGrid(minesArray) {
         cheatGrid.innerHTML = '';
         for (let i = 0; i < 25; i++) {
@@ -1220,6 +1359,7 @@
             updateCheatGrid(mines);
         }
 
+        playSound('start');
         showMessage('Игра началась!');
     }
 
@@ -1232,7 +1372,7 @@
         let back = this.querySelector(".back");
 
         if (mines.includes(i)) {
-            // Мина - используем красивую чёрную бомбу
+            // Мина
             back.classList.add("mine");
             back.innerHTML = `
                 <span class="black-bomb">
@@ -1244,6 +1384,7 @@
             revealAll();
             active = false;
 
+            playSound('bomb');
             showMessage('Вы проиграли!');
 
             if (gameOverTimer) clearTimeout(gameOverTimer);
@@ -1253,8 +1394,9 @@
                 container.classList.remove('game-active');
                 createGrid();
                 updateCashButton();
-                if (cheatModeEnabled) updateCheatGrid([]); // очищаем чит-сетку
+                if (cheatModeEnabled) updateCheatGrid([]);
                 gameOverTimer = null;
+                playSound('lose');
             }, 2000);
         } else {
             // Безопасная клетка
@@ -1264,6 +1406,8 @@
             const cfg = multConfig[currentMineCount] || multConfig[3];
             multiplier += cfg.inc;
             updateCashButton();
+
+            playSound('safe');
 
             const flipped = document.querySelectorAll('.card.flipped').length;
             if (flipped === 25 - mines.length) {
@@ -1303,7 +1447,6 @@
     function cashOut() {
         if (!active) return;
 
-        // Сохраняем параметры игры для проверки секретной комбинации
         const wasMineCount = currentMineCount;
         const wasBet = bet;
         const flippedCount = document.querySelectorAll('.card.flipped').length;
@@ -1312,6 +1455,7 @@
         balance += winAmount;
         updateBalance();
 
+        playSound('win');
         showMessage(`Вы выиграли ${winAmount.toFixed(2)} wB$!`);
 
         active = false;
@@ -1335,13 +1479,11 @@
         balance += amount;
         updateBalance();
         showMessage(`+${amount} wB$ к балансу`);
-        // После пополнения скрываем кнопки опций и показываем зелёную кнопку
         depositOptions.classList.remove('show');
         showDepositBtn.style.display = 'block';
     }
 
     function openBalanceModal() {
-        // Сбрасываем состояние: зелёная кнопка видна, опции скрыты
         showDepositBtn.style.display = 'block';
         depositOptions.classList.remove('show');
         modalOverlay.classList.add('active');
@@ -1352,34 +1494,30 @@
         modalOverlay.classList.remove('active');
     }
 
-    // Показать кнопки депозита и скрыть зелёную кнопку
     showDepositBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         showDepositBtn.style.display = 'none';
         depositOptions.classList.add('show');
     });
 
-    // Закрытие модалки баланса по клику на оверлей
     modalOverlay.addEventListener('click', function(e) {
         if (e.target === modalOverlay) {
             closeBalanceModal();
         }
     });
 
-    // Кнопка баланса
     document.getElementById('balanceBtn').addEventListener('click', openBalanceModal);
 
     // ==== Админ-модалка ====
     function openAdminModal() {
         adminModal.classList.add('active');
-        adminPassword.value = ''; // очищаем поле
+        adminPassword.value = '';
     }
 
     function closeAdminModal() {
         adminModal.classList.remove('active');
     }
 
-    // Закрытие по клику на оверлей
     adminModal.addEventListener('click', function(e) {
         if (e.target === adminModal) {
             closeAdminModal();
